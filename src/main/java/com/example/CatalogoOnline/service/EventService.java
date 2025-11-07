@@ -1,71 +1,111 @@
 package com.example.CatalogoOnline.service;
 
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.stream.Collectors;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.example.CatalogoOnline.dto.EventDTO;
+import com.example.CatalogoOnline.entity.EventEntity;
+import com.example.CatalogoOnline.entity.VenueEntity;
+import com.example.CatalogoOnline.exception.DuplicateResourceException;
 import com.example.CatalogoOnline.exception.NotFoundException;
+import com.example.CatalogoOnline.mapper.EventMapper;
 import com.example.CatalogoOnline.repository.EventRepository;
+import com.example.CatalogoOnline.repository.VenueRepository;
 
 @Service
+@Transactional
 public class EventService {
     
     private final EventRepository eventRepository;
+    private final VenueRepository venueRepository;
+    private final EventMapper eventMapper;
 
-    public EventService(EventRepository eventRepository) {
+    public EventService(EventRepository eventRepository, 
+                       VenueRepository venueRepository,
+                       EventMapper eventMapper) {
         this.eventRepository = eventRepository;
+        this.venueRepository = venueRepository;
+        this.eventMapper = eventMapper;
     }
 
-    /**
-     * Crea un nuevo evento
-     * @param eventDTO Los datos del evento a crear
-     * @return El evento creado con su ID asignado
-     */
     public EventDTO createEvent(EventDTO eventDTO) {
-        eventDTO.setId(null); // Aseguramos que sea un nuevo evento
-        return eventRepository.save(eventDTO);
-    }
-
-    /**
-     * Obtiene todos los eventos
-     * @return Lista de todos los eventos
-     */
-    public List<EventDTO> getAllEvents() {
-        return eventRepository.findAll();
-    }
-
-    /**
-     * Obtiene un evento por su ID
-     * @param id El ID del evento
-     * @return El evento encontrado
-     * @throws NotFoundException si el evento no existe
-     */
-    public EventDTO getEventById(Long id) {
-        return eventRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException("Evento no encontrado con ID: " + id));
-    }
-
-    /**
-     * Actualiza un evento existente
-     * @param id El ID del evento a actualizar
-     * @param eventDTO Los nuevos datos del evento
-     * @return El evento actualizado
-     * @throws NotFoundException si el evento no existe
-     */
-    public EventDTO updateEvent(Long id, EventDTO eventDTO) {
-        if (!eventRepository.existsById(id)) {
-            throw new NotFoundException("Evento no encontrado con ID: " + id);
+        // Validar nombre duplicado (TASK 2.2)
+        if (eventRepository.existsByName(eventDTO.getName())) {
+            throw new DuplicateResourceException(
+                "Ya existe un evento con el nombre: " + eventDTO.getName()
+            );
         }
-        eventDTO.setId(id);
-        return eventRepository.save(eventDTO);
+        
+        // Buscar venue si se proporciona
+        VenueEntity venue = null;
+        if (eventDTO.getVenueId() != null) {
+            venue = venueRepository.findById(eventDTO.getVenueId())
+                    .orElseThrow(() -> new NotFoundException(
+                        "Venue no encontrado con ID: " + eventDTO.getVenueId()
+                    ));
+        }
+        
+        EventEntity entity = eventMapper.toEntity(eventDTO, venue);
+        EventEntity savedEntity = eventRepository.save(entity);
+        return eventMapper.toDTO(savedEntity);
     }
 
-    /**
-     * Elimina un evento por su ID
-     * @param id El ID del evento a eliminar
-     * @throws NotFoundException si el evento no existe
-     */
+    @Transactional(readOnly = true)
+    public List<EventDTO> getAllEvents() {
+        return eventRepository.findAll().stream()
+                .map(eventMapper::toDTO)
+                .collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public EventDTO getEventById(Long id) {
+        EventEntity entity = eventRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException(
+                    "Evento no encontrado con ID: " + id
+                ));
+        return eventMapper.toDTO(entity);
+    }
+
+    public EventDTO updateEvent(Long id, EventDTO eventDTO) {
+        EventEntity existingEntity = eventRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException(
+                    "Evento no encontrado con ID: " + id
+                ));
+        
+        // Validar nombre duplicado (excluyendo el evento actual)
+        if (eventRepository.existsByNameAndIdNot(eventDTO.getName(), id)) {
+            throw new DuplicateResourceException(
+                "Ya existe otro evento con el nombre: " + eventDTO.getName()
+            );
+        }
+        
+        // Buscar venue si cambió
+        VenueEntity venue = existingEntity.getVenue();
+        if (eventDTO.getVenueId() != null && 
+            !eventDTO.getVenueId().equals(existingEntity.getVenue() != null ? 
+                existingEntity.getVenue().getId() : null)) {
+            venue = venueRepository.findById(eventDTO.getVenueId())
+                    .orElseThrow(() -> new NotFoundException(
+                        "Venue no encontrado con ID: " + eventDTO.getVenueId()
+                    ));
+        }
+        
+        existingEntity.setName(eventDTO.getName());
+        existingEntity.setDescription(eventDTO.getDescription());
+        existingEntity.setEventDate(eventDTO.getEventDate());
+        existingEntity.setCategory(eventDTO.getCategory());
+        existingEntity.setVenue(venue);
+        
+        EventEntity updatedEntity = eventRepository.save(existingEntity);
+        return eventMapper.toDTO(updatedEntity);
+    }
+
     public void deleteEvent(Long id) {
         if (!eventRepository.existsById(id)) {
             throw new NotFoundException("Evento no encontrado con ID: " + id);
@@ -73,20 +113,22 @@ public class EventService {
         eventRepository.deleteById(id);
     }
 
-    /**
-     * Verifica si existe un evento con el ID dado
-     * @param id El ID a verificar
-     * @return true si existe, false en caso contrario
-     */
-    public boolean existsById(Long id) {
-        return eventRepository.existsById(id);
-    }
-
-    /**
-     * Cuenta el total de eventos
-     * @return Número total de eventos
-     */
+    @Transactional(readOnly = true)
     public long countEvents() {
         return eventRepository.count();
+    }
+    
+    // TASK 3: Métodos con paginación y filtros
+    @Transactional(readOnly = true)
+    public Page<EventDTO> getEventsPaginated(Pageable pageable) {
+        return eventRepository.findAll(pageable)
+                .map(eventMapper::toDTO);
+    }
+    
+    @Transactional(readOnly = true)
+    public Page<EventDTO> getEventsWithFilters(String city, String category, 
+                                               LocalDateTime startDate, Pageable pageable) {
+        return eventRepository.findByFilters(city, category, startDate, pageable)
+                .map(eventMapper::toDTO);
     }
 }

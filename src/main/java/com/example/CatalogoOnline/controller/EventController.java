@@ -1,7 +1,13 @@
 package com.example.CatalogoOnline.controller;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -11,6 +17,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.example.CatalogoOnline.dto.EventDTO;
@@ -36,7 +43,8 @@ public class EventController {
     @Operation(summary = "Crear un nuevo evento", description = "Crea un nuevo evento en el catálogo")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "Evento creado exitosamente"),
-            @ApiResponse(responseCode = "400", description = "Datos inválidos")
+            @ApiResponse(responseCode = "400", description = "Datos inválidos"),
+            @ApiResponse(responseCode = "409", description = "Evento duplicado")
     })
     @PostMapping
     public ResponseEntity<EventDTO> createEvent(@Valid @RequestBody EventDTO eventDTO) {
@@ -44,10 +52,33 @@ public class EventController {
         return new ResponseEntity<>(createdEvent, HttpStatus.CREATED);
     }
 
-    @Operation(summary = "Obtener todos los eventos", description = "Retorna una lista de todos los eventos")
-    @ApiResponse(responseCode = "200", description = "Lista de eventos obtenida exitosamente")
+    @Operation(summary = "Obtener eventos con paginación y filtros", 
+               description = "Retorna eventos con soporte para paginación, ordenamiento y filtros opcionales por ciudad, categoría y fecha")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Lista de eventos paginada obtenida exitosamente")
+    })
     @GetMapping
-    public ResponseEntity<List<EventDTO>> getAllEvents() {
+    public ResponseEntity<Page<EventDTO>> getEventsPaginated(
+            @RequestParam(required = false) String city,
+            @RequestParam(required = false) String category,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,
+            @PageableDefault(size = 10, sort = "eventDate", direction = Sort.Direction.ASC) Pageable pageable) {
+        
+        Page<EventDTO> events;
+        if (city != null || category != null || startDate != null) {
+            events = eventService.getEventsWithFilters(city, category, startDate, pageable);
+        } else {
+            events = eventService.getEventsPaginated(pageable);
+        }
+        
+        return ResponseEntity.ok(events);
+    }
+
+    @Operation(summary = "Obtener todos los eventos sin paginación", 
+               description = "Retorna lista completa de eventos (usar solo para datasets pequeños)")
+    @ApiResponse(responseCode = "200", description = "Lista completa de eventos")
+    @GetMapping("/all")
+    public ResponseEntity<List<EventDTO>> getAllEventsNoPagination() {
         List<EventDTO> events = eventService.getAllEvents();
         return ResponseEntity.ok(events);
     }
@@ -67,7 +98,8 @@ public class EventController {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Evento actualizado exitosamente"),
             @ApiResponse(responseCode = "404", description = "Evento no encontrado"),
-            @ApiResponse(responseCode = "400", description = "Datos inválidos")
+            @ApiResponse(responseCode = "400", description = "Datos inválidos"),
+            @ApiResponse(responseCode = "409", description = "Evento duplicado")
     })
     @PutMapping("/{id}")
     public ResponseEntity<EventDTO> updateEvent(@PathVariable Long id, @Valid @RequestBody EventDTO eventDTO) {

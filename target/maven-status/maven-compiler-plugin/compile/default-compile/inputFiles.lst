@@ -1,0 +1,16 @@
+/home/Coder/Vídeos/Catalogo-Online/src/main/java/com/example/CatalogoOnline/CatalogoOnlineApplication.java
+/home/Coder/Vídeos/Catalogo-Online/src/main/java/com/example/CatalogoOnline/controller/EventController.java
+/home/Coder/Vídeos/Catalogo-Online/src/main/java/com/example/CatalogoOnline/controller/VenueController.java
+/home/Coder/Vídeos/Catalogo-Online/src/main/java/com/example/CatalogoOnline/dto/EventDTO.java
+/home/Coder/Vídeos/Catalogo-Online/src/main/java/com/example/CatalogoOnline/dto/VenueDTO.java
+/home/Coder/Vídeos/Catalogo-Online/src/main/java/com/example/CatalogoOnline/entity/EventEntity.java
+/home/Coder/Vídeos/Catalogo-Online/src/main/java/com/example/CatalogoOnline/entity/VenueEntity.java
+/home/Coder/Vídeos/Catalogo-Online/src/main/java/com/example/CatalogoOnline/exception/DuplicateResourceException.java
+/home/Coder/Vídeos/Catalogo-Online/src/main/java/com/example/CatalogoOnline/exception/GlobalExceptionHandler.java
+/home/Coder/Vídeos/Catalogo-Online/src/main/java/com/example/CatalogoOnline/exception/NotFoundException.java
+/home/Coder/Vídeos/Catalogo-Online/src/main/java/com/example/CatalogoOnline/mapper/EventMapper.java
+/home/Coder/Vídeos/Catalogo-Online/src/main/java/com/example/CatalogoOnline/mapper/VenueMapper.java
+/home/Coder/Vídeos/Catalogo-Online/src/main/java/com/example/CatalogoOnline/repository/EventRepository.java
+/home/Coder/Vídeos/Catalogo-Online/src/main/java/com/example/CatalogoOnline/repository/VenueRepository.java
+/home/Coder/Vídeos/Catalogo-Online/src/main/java/com/example/CatalogoOnline/service/EventService.java
+/home/Coder/Vídeos/Catalogo-Online/src/main/java/com/example/CatalogoOnline/service/VenueService.java

@@ -1,92 +1,39 @@
 package com.example.CatalogoOnline.repository;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.concurrent.atomic.AtomicLong;
-
+import com.example.CatalogoOnline.entity.EventEntity;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import com.example.CatalogoOnline.dto.EventDTO;
+import java.time.LocalDateTime;
 
 @Repository
-public class EventRepository {
+public interface EventRepository extends JpaRepository<EventEntity, Long> {
     
-    private final List<EventDTO> events = new ArrayList<>();
-    private final AtomicLong idGenerator = new AtomicLong(1);
-
-    /**
-     * Guarda un nuevo evento en memoria
-     * @param event El evento a guardar
-     * @return El evento guardado con su ID asignado
-     */
-    public EventDTO save(EventDTO event) {
-        if (event.getId() == null) {
-            // Nuevo evento
-            event.setId(idGenerator.getAndIncrement());
-            events.add(event);
-        } else {
-            // Actualizar evento existente
-            Optional<EventDTO> existingEvent = findById(event.getId());
-            if (existingEvent.isPresent()) {
-                int index = events.indexOf(existingEvent.get());
-                events.set(index, event);
-            } else {
-                events.add(event);
-            }
-        }
-        return event;
-    }
-
-    /**
-     * Encuentra todos los eventos
-     * @return Lista de todos los eventos
-     */
-    public List<EventDTO> findAll() {
-        return new ArrayList<>(events);
-    }
-
-    /**
-     * Encuentra un evento por su ID
-     * @param id El ID del evento
-     * @return Optional con el evento si existe
-     */
-    public Optional<EventDTO> findById(Long id) {
-        return events.stream()
-                .filter(event -> event.getId().equals(id))
-                .findFirst();
-    }
-
-    /**
-     * Elimina un evento por su ID
-     * @param id El ID del evento a eliminar
-     * @return true si se eliminó, false si no existía
-     */
-    public boolean deleteById(Long id) {
-        return events.removeIf(event -> event.getId().equals(id));
-    }
-
-    /**
-     * Verifica si existe un evento con el ID dado
-     * @param id El ID a verificar
-     * @return true si existe, false en caso contrario
-     */
-    public boolean existsById(Long id) {
-        return events.stream().anyMatch(event -> event.getId().equals(id));
-    }
-
-    /**
-     * Cuenta el total de eventos
-     * @return Número total de eventos
-     */
-    public long count() {
-        return events.size();
-    }
-
-    /**
-     * Limpia todos los eventos (útil para testing)
-     */
-    public void deleteAll() {
-        events.clear();
-    }
+    // Validación de nombre único
+    boolean existsByName(String name);
+    
+    boolean existsByNameAndIdNot(String name, Long id);
+    
+    // Filtros derivados para paginación (TASK 3)
+    Page<EventEntity> findByCategory(String category, Pageable pageable);
+    
+    Page<EventEntity> findByVenue_City(String city, Pageable pageable);
+    
+    Page<EventEntity> findByEventDateAfter(LocalDateTime startDate, Pageable pageable);
+    
+    // Query personalizada para filtros combinados
+    @Query("SELECT e FROM EventEntity e WHERE " +
+           "(:city IS NULL OR e.venue.city = :city) AND " +
+           "(:category IS NULL OR e.category = :category) AND " +
+           "(:startDate IS NULL OR e.eventDate >= :startDate)")
+    Page<EventEntity> findByFilters(
+        @Param("city") String city,
+        @Param("category") String category,
+        @Param("startDate") LocalDateTime startDate,
+        Pageable pageable
+    );
 }
