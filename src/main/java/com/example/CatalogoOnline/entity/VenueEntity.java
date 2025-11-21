@@ -44,6 +44,7 @@ public class VenueEntity {
     
     @OneToMany(mappedBy = "venue", cascade = CascadeType.ALL, orphanRemoval = true)
     @ToString.Exclude
+    @Builder.Default
     private List<EventEntity> events = new ArrayList<>();
     
     @Column(name = "created_at", updatable = false)
