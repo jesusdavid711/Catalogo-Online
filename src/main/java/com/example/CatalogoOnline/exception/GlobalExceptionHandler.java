@@ -38,7 +38,7 @@ public class GlobalExceptionHandler {
         errorResponse.put("timestamp", LocalDateTime.now());
         errorResponse.put("status", HttpStatus.BAD_REQUEST.value());
         errorResponse.put("error", "Bad Request");
-        errorResponse.put("message", "Error de validación");
+        errorResponse.put("message", "Validation error");
         errorResponse.put("errors", errors);
 
         return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);

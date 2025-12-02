@@ -1,6 +1,7 @@
 package com.example.CatalogoOnline.repository;
 
-import com.example.CatalogoOnline.entity.EventEntity;
+import java.time.LocalDateTime;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -8,12 +9,12 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import java.time.LocalDateTime;
+import com.example.CatalogoOnline.entity.EventEntity;
 
 @Repository
 public interface EventRepository extends JpaRepository<EventEntity, Long> {
     
-    // Validación de nombre único
+    // Validation: unique event names (business rule)
     boolean existsByName(String name);
     
     boolean existsByNameAndIdNot(String name, Long id);

@@ -29,7 +29,7 @@ public class EventDTO {
     @Size(max = 100, message = "La categoría no puede exceder 100 caracteres")
     private String category;
 
-    // Constructores, getters y setters (mantener los existentes)
+    // Constructors, getters and setters
     public EventDTO() {}
 
     public EventDTO(Long id, String name, String description, LocalDateTime eventDate, 
@@ -44,7 +44,7 @@ public class EventDTO {
         this.category = category;
     }
 
-    // Getters y Setters (mantener los existentes)
+    // Getters and Setters
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
     public String getName() { return name; }
