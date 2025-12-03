@@ -42,7 +42,8 @@ public class EventController {
     private final VenueUseCase venueUseCase;
     private final EventDTOMapper eventMapper;
 
-    public EventController(EventService eventService, EventUseCase eventUseCase, VenueUseCase venueUseCase, EventDTOMapper eventMapper) {
+    public EventController(EventService eventService, EventUseCase eventUseCase, VenueUseCase venueUseCase,
+            EventDTOMapper eventMapper) {
         this.eventService = eventService;
         this.eventUseCase = eventUseCase;
         this.venueUseCase = venueUseCase;
@@ -71,10 +72,9 @@ public class EventController {
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
 
-    @Operation(summary = "Get events with pagination and filters", 
-               description = "Returns events with support for pagination, sorting and optional filters by city, category and date")
+    @Operation(summary = "Get events with pagination and filters", description = "Returns events with support for pagination, sorting and optional filters by city, category and date")
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Paginated event list retrieved successfully")
+            @ApiResponse(responseCode = "200", description = "Paginated event list retrieved successfully")
     })
     @GetMapping
     public ResponseEntity<Page<EventDTO>> getEventsPaginated(
@@ -82,7 +82,7 @@ public class EventController {
             @RequestParam(required = false) String category,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,
             @PageableDefault(size = 10, sort = "eventDate", direction = Sort.Direction.ASC) Pageable pageable) {
-        
+
         Page<EventDTO> events;
         // Paginated endpoints keep the existing EventService implementation
         if (city != null || category != null || startDate != null) {
@@ -90,12 +90,11 @@ public class EventController {
         } else {
             events = eventService.getEventsPaginated(pageable);
         }
-        
+
         return ResponseEntity.ok(events);
     }
 
-    @Operation(summary = "Obtener todos los eventos sin paginación", 
-               description = "Retorna lista completa de eventos (usar solo para datasets pequeños)")
+    @Operation(summary = "Obtener todos los eventos sin paginación", description = "Retorna lista completa de eventos (usar solo para datasets pequeños)")
     @ApiResponse(responseCode = "200", description = "Lista completa de eventos")
     @GetMapping("/all")
     public ResponseEntity<List<EventDTO>> getAllEventsNoPagination() {
@@ -122,7 +121,8 @@ public class EventController {
     @GetMapping("/{id}")
     public ResponseEntity<EventDTO> getEventById(@PathVariable Long id) {
         com.example.CatalogoOnline.dominio.model.Event event = eventUseCase.getEventById(id)
-            .orElseThrow(() -> new com.example.CatalogoOnline.exception.NotFoundException("Evento no encontrado con ID: " + id));
+                .orElseThrow(() -> new com.example.CatalogoOnline.exception.NotFoundException(
+                        "Evento no encontrado con ID: " + id));
         EventDTO dto = eventMapper.toDTO(event);
         if (event.getVenueId() != null) {
             venueUseCase.getVenueById(event.getVenueId()).ifPresent(v -> {

@@ -2,51 +2,40 @@ package com.example.CatalogoOnline.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
 
+import java.time.LocalDateTime;
+import java.util.HashSet;
+import java.util.Set;
+
+/**
+ * JPA Entity for Category.
+ * Represents event categories with ManyToMany relationship to events.
+ * This entity belongs to the infrastructure layer and should not be exposed to
+ * the domain.
+ */
 @Entity
-@Table(name = "venues")
+@Table(name = "categories")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class VenueEntity {
+public class CategoryEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, length = 200)
+    @Column(unique = true, nullable = false, length = 100)
     private String name;
 
     @Column(length = 500)
-    private String address;
+    private String description;
 
-    @Column(length = 100)
-    private String city;
-
-    @Column(length = 100)
-    private String country;
-
-    @Column(nullable = false)
-    private Integer capacity;
-
-    @Column(length = 50)
-    private String type;
-
-    @Column(length = 20)
-    private String phone;
-
-    @Column(length = 100)
-    private String email;
-
-    @OneToMany(mappedBy = "venue", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @ManyToMany(mappedBy = "categories", fetch = FetchType.LAZY)
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
     @Builder.Default
-    private List<EventEntity> events = new ArrayList<>();
+    private Set<EventEntity> events = new HashSet<>();
 
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;

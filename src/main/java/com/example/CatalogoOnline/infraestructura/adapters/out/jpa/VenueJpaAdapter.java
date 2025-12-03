@@ -12,7 +12,10 @@ import com.example.CatalogoOnline.entity.VenueEntity;
 import com.example.CatalogoOnline.repository.VenueRepository;
 import com.example.CatalogoOnline.infraestructura.adapters.out.jpa.mapper.VenueEntityMapper;
 
+import org.springframework.transaction.annotation.Transactional;
+
 @Component
+@Transactional(readOnly = true)
 public class VenueJpaAdapter implements VenueRepositoryPort {
 
     private final VenueRepository venueRepository;
@@ -24,6 +27,7 @@ public class VenueJpaAdapter implements VenueRepositoryPort {
     }
 
     @Override
+    @Transactional
     public Venue save(Venue venue) {
         VenueEntity entity = mapper.toEntity(venue);
         VenueEntity saved = venueRepository.save(entity);
@@ -37,10 +41,11 @@ public class VenueJpaAdapter implements VenueRepositoryPort {
 
     @Override
     public List<Venue> findAll() {
-        return venueRepository.findAll().stream().map(mapper::toDomain).collect(Collectors.toList());
+        return venueRepository.findAllWithEvents().stream().map(mapper::toDomain).collect(Collectors.toList());
     }
 
     @Override
+    @Transactional
     public void deleteById(Long id) {
         venueRepository.deleteById(id);
     }
